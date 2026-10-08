@@ -68,7 +68,7 @@ app.MapGet("/api/orders", async (OrdersDbContext db) =>
 {
     var orders = await db.Orders.AsNoTracking().Include(order => order.Lines).OrderByDescending(order => order.CreatedAt)
         .Select(order => new OrderResponse(order.Id, order.CreatedAt, order.TotalCentavos,
-            order.Lines.OrderBy(line => line.ItemName).Select(line => new OrderLineResponse(line.ItemName, line.UnitPriceCentavos, line.Quantity)).ToList())).ToListAsync();
+            order.Lines.OrderBy(line => line.ItemName).Select(line => new OrderLineResponse(line.ItemName, line.Price, line.Quantity)).ToList())).ToListAsync();
     return Results.Ok(orders);
 });
 
@@ -94,14 +94,14 @@ app.MapPost("/api/orders", async (CreateOrderRequest request, OrdersDbContext db
     {
         var foodItem = foodItems[requestLine.FoodItemId];
         foodItem.AvailableOrderQty -= requestLine.Quantity;
-        order.Lines.Add(new OrderLine { FoodItemId = foodItem.Id, ItemName = foodItem.Name, UnitPriceCentavos = foodItem.PriceCentavos, Quantity = requestLine.Quantity });
+        order.Lines.Add(new OrderLine { FoodItemId = foodItem.Id, ItemName = foodItem.Name, Price = foodItem.PriceCentavos, Quantity = requestLine.Quantity });
     }
-    order.TotalCentavos = order.Lines.Sum(line => line.UnitPriceCentavos * line.Quantity);
+    order.TotalCentavos = order.Lines.Sum(line => line.Price * line.Quantity);
     db.Orders.Add(order);
     await db.SaveChangesAsync();
     await transaction.CommitAsync();
     return Results.Created($"/api/orders/{order.Id}", new OrderResponse(order.Id, order.CreatedAt, order.TotalCentavos,
-        order.Lines.Select(line => new OrderLineResponse(line.ItemName, line.UnitPriceCentavos, line.Quantity)).ToList()));
+        order.Lines.Select(line => new OrderLineResponse(line.ItemName, line.Price, line.Quantity)).ToList()));
 });
 
 app.Run();
@@ -117,4 +117,4 @@ record FoodItemResponse(Guid Id, string Name, int PriceCentavos, int AvailableOr
 record CreateOrderRequest(List<CreateOrderLineRequest> Items);
 record CreateOrderLineRequest(Guid FoodItemId, int Quantity);
 record OrderResponse(Guid Id, DateTimeOffset CreatedAt, int TotalCentavos, List<OrderLineResponse> Lines);
-record OrderLineResponse(string ItemName, int UnitPriceCentavos, int Quantity);
+record OrderLineResponse(string ItemName, int Price, int Quantity);

@@ -22,7 +22,7 @@ public class OrderLine
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid FoodItemId { get; set; }
     public string ItemName { get; set; } = string.Empty;
-    public int UnitPriceCentavos { get; set; }
+    public int Price { get; set; }
     public int Quantity { get; set; }
     public Guid OrderId { get; set; }
     public Order Order { get; set; } = null!;
