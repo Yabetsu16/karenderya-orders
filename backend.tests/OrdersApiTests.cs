@@ -44,8 +44,8 @@ public class OrdersApiTests(DatabaseFixture database) : IAsyncLifetime
         var response = await _client.PostAsJsonAsync("/api/orders", new { items = new[] { new { foodItemId = item.Id, quantity = 2 } } });
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var order = await response.Content.ReadFromJsonAsync<OrderResponse>(Json);
-        order!.TotalCentavos.Should().Be(item.PriceCentavos * 2);
-        order.Lines.Single().UnitPriceCentavos.Should().Be(item.PriceCentavos);
+        order!.Total.Should().Be(item.Price * 2);
+        order.Lines.Single().UnitPrice.Should().Be(item.Price);
         (await Menu()).Single(menuItem => menuItem.Id == item.Id).AvailableOrderQty.Should().Be(before - 2);
     }
 
@@ -61,7 +61,8 @@ public class OrdersApiTests(DatabaseFixture database) : IAsyncLifetime
     [Fact]
     public async Task Archived_item_is_hidden_from_new_orders_but_still_available_in_management_list()
     {
-        var create = await _client.PostAsJsonAsync("/api/food-items", new { name = "Test dish", priceCentavos = 5000, availableOrderQty = 1 });
+        var create = await _client.PostAsJsonAsync("/api/food-items", new { name = "Test dish", price = 5000, availableOrderQty = 1 });
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
         var item = await create.Content.ReadFromJsonAsync<FoodItemResponse>(Json);
         (await _client.DeleteAsync($"/api/food-items/{item!.Id}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await Menu()).Should().NotContain(menuItem => menuItem.Id == item.Id);
@@ -78,6 +79,6 @@ public sealed class TestAppFactory(string connectionString) : WebApplicationFact
         config.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Postgres"] = connectionString }));
 }
 
-public record FoodItemResponse(Guid Id, string Name, int PriceCentavos, int AvailableOrderQty, bool IsArchived);
-public record OrderResponse(Guid Id, DateTimeOffset CreatedAt, int TotalCentavos, List<OrderLineResponse> Lines);
-public record OrderLineResponse(string ItemName, int UnitPriceCentavos, int Quantity);
+public record FoodItemResponse(Guid Id, string Name, int Price, int AvailableOrderQty, bool IsArchived);
+public record OrderResponse(Guid Id, DateTimeOffset CreatedAt, int Total, List<OrderLineResponse> Lines);
+public record OrderLineResponse(string ItemName, int UnitPrice, int Quantity);
