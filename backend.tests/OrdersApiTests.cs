@@ -69,6 +69,33 @@ public class OrdersApiTests(DatabaseFixture database) : IAsyncLifetime
         (await Menu(true)).Single(menuItem => menuItem.Id == item.Id).IsArchived.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Unarchive_makes_item_available_again()
+    {
+        var create = await _client.PostAsJsonAsync("/api/food-items", new { name = $"Restore dish {Guid.NewGuid()}", price = 5000, availableOrderQty = 1 });
+        var item = await create.Content.ReadFromJsonAsync<FoodItemResponse>(Json);
+        await _client.DeleteAsync($"/api/food-items/{item!.Id}");
+
+        var response = await _client.PostAsync($"/api/food-items/{item.Id}/unarchive", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await Menu()).Should().Contain(menuItem => menuItem.Id == item.Id);
+    }
+
+    [Fact]
+    public async Task Creating_food_with_existing_menu_name_returns_conflict_message()
+    {
+        var name = $"Duplicate dish {Guid.NewGuid()}";
+        var create = await _client.PostAsJsonAsync("/api/food-items", new { name, price = 5000, availableOrderQty = 1 });
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var duplicate = await _client.PostAsJsonAsync("/api/food-items", new { name = name.ToUpperInvariant(), price = 6000, availableOrderQty = 2 });
+
+        duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await duplicate.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("message").GetString().Should().Be("A food with this name is already in the menu.");
+    }
+
     private async Task<List<FoodItemResponse>> Menu(bool includeArchived = false) =>
         (await _client.GetFromJsonAsync<List<FoodItemResponse>>($"/api/food-items?includeArchived={includeArchived.ToString().ToLowerInvariant()}", Json))!;
 }

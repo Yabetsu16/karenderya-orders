@@ -36,7 +36,10 @@ app.MapPost("/api/food-items", async (FoodItemRequest request, OrdersDbContext d
 {
     var error = ValidateFoodItem(request);
     if (error is not null) return Results.ValidationProblem(new Dictionary<string, string[]> { ["foodItem"] = [error] });
-    var item = new FoodItem { Name = request.Name.Trim(), Price = request.Price, AvailableOrderQty = request.AvailableOrderQty };
+    var name = request.Name.Trim();
+    if (await db.FoodItems.AnyAsync(item => !item.IsArchived && item.Name.ToLower() == name.ToLower()))
+        return Results.Conflict(new { message = "A food with this name is already in the menu." });
+    var item = new FoodItem { Name = name, Price = request.Price, AvailableOrderQty = request.AvailableOrderQty };
     db.FoodItems.Add(item);
     await db.SaveChangesAsync();
     return Results.Created($"/api/food-items/{item.Id}", new FoodItemResponse(item.Id, item.Name, item.Price, item.AvailableOrderQty, item.IsArchived));
@@ -48,7 +51,10 @@ app.MapPut("/api/food-items/{id:guid}", async (Guid id, FoodItemRequest request,
     if (error is not null) return Results.ValidationProblem(new Dictionary<string, string[]> { ["foodItem"] = [error] });
     var item = await db.FoodItems.FindAsync(id);
     if (item is null) return Results.NotFound();
-    item.Name = request.Name.Trim();
+    var name = request.Name.Trim();
+    if (await db.FoodItems.AnyAsync(other => other.Id != id && !other.IsArchived && other.Name.ToLower() == name.ToLower()))
+        return Results.Conflict(new { message = "A food with this name is already in the menu." });
+    item.Name = name;
     item.Price = request.Price;
     item.AvailableOrderQty = request.AvailableOrderQty;
     await db.SaveChangesAsync();
@@ -60,6 +66,17 @@ app.MapDelete("/api/food-items/{id:guid}", async (Guid id, OrdersDbContext db) =
     var item = await db.FoodItems.FindAsync(id);
     if (item is null) return Results.NotFound();
     item.IsArchived = true;
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapPost("/api/food-items/{id:guid}/unarchive", async (Guid id, OrdersDbContext db) =>
+{
+    var item = await db.FoodItems.FindAsync(id);
+    if (item is null) return Results.NotFound();
+    if (await db.FoodItems.AnyAsync(other => other.Id != id && !other.IsArchived && other.Name.ToLower() == item.Name.ToLower()))
+        return Results.Conflict(new { message = "A food with this name is already in the menu." });
+    item.IsArchived = false;
     await db.SaveChangesAsync();
     return Results.NoContent();
 });

@@ -107,6 +107,18 @@ function App() {
     }
   };
 
+  const unarchive = async (item: FoodItem) => {
+    try {
+      await request(`/api/food-items/${item.id}/unarchive`, {
+        method: "POST",
+      });
+      await refresh();
+      setMessage("Item unarchived.");
+    } catch (error) {
+      setMessage((error as Error).message);
+    }
+  };
+
   const checkout = async () => {
     const lines = Object.entries(cart)
       .filter(([, quantity]) => quantity > 0)
@@ -179,6 +191,7 @@ function App() {
             items={items}
             onEdit={beginEdit}
             onArchive={archive}
+            onUnarchive={unarchive}
           />
           <OrderHistory orders={orders} />
         </>

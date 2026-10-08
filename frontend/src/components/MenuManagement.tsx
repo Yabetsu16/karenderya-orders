@@ -5,12 +5,14 @@ type MenuManagementProps = {
   items: FoodItem[];
   onEdit: (item: FoodItem) => void;
   onArchive: (item: FoodItem) => void;
+  onUnarchive: (item: FoodItem) => void;
 };
 
 export function MenuManagement({
   items,
   onEdit,
   onArchive,
+  onUnarchive,
 }: MenuManagementProps) {
   return (
     <section className="panel">
@@ -29,7 +31,11 @@ export function MenuManagement({
               </small>
             </div>
             <div>
-              {!item.isArchived && (
+              {item.isArchived ? (
+                <button className="text" onClick={() => onUnarchive(item)}>
+                  Unarchive
+                </button>
+              ) : (
                 <>
                   <button className="text" onClick={() => onEdit(item)}>
                     Edit
