@@ -10,7 +10,7 @@ With Docker running:
 docker compose up --build
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The API applies EF Core migrations and seeds three menu items on first start. To reset the database and seed again, run `docker compose down -v`.
+Open [http://localhost:5173](http://localhost:5173) for the customer ordering page, or [http://localhost:5173/admin](http://localhost:5173/admin) for menu and order administration. The API applies EF Core migrations and seeds three menu items on first start. To reset the database and seed again, run `docker compose down -v`.
 
 ## Checks
 
