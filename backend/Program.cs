@@ -28,7 +28,7 @@ app.MapGet("/api/food-items", async (bool includeArchived, OrdersDbContext db) =
     var query = db.FoodItems.AsNoTracking();
     if (!includeArchived) query = query.Where(item => !item.IsArchived);
     var items = await query.OrderBy(item => item.Name).Select(item => new FoodItemResponse(
-        item.Id, item.Name, item.PriceCentavos, item.AvailableOrderQty, item.IsArchived)).ToListAsync();
+        item.Id, item.Name, item.Price, item.AvailableOrderQty, item.IsArchived)).ToListAsync();
     return Results.Ok(items);
 });
 
@@ -36,10 +36,10 @@ app.MapPost("/api/food-items", async (FoodItemRequest request, OrdersDbContext d
 {
     var error = ValidateFoodItem(request);
     if (error is not null) return Results.ValidationProblem(new Dictionary<string, string[]> { ["foodItem"] = [error] });
-    var item = new FoodItem { Name = request.Name.Trim(), PriceCentavos = request.PriceCentavos, AvailableOrderQty = request.AvailableOrderQty };
+    var item = new FoodItem { Name = request.Name.Trim(), Price = request.Price, AvailableOrderQty = request.AvailableOrderQty };
     db.FoodItems.Add(item);
     await db.SaveChangesAsync();
-    return Results.Created($"/api/food-items/{item.Id}", new FoodItemResponse(item.Id, item.Name, item.PriceCentavos, item.AvailableOrderQty, item.IsArchived));
+    return Results.Created($"/api/food-items/{item.Id}", new FoodItemResponse(item.Id, item.Name, item.Price, item.AvailableOrderQty, item.IsArchived));
 });
 
 app.MapPut("/api/food-items/{id:guid}", async (Guid id, FoodItemRequest request, OrdersDbContext db) =>
@@ -49,10 +49,10 @@ app.MapPut("/api/food-items/{id:guid}", async (Guid id, FoodItemRequest request,
     var item = await db.FoodItems.FindAsync(id);
     if (item is null) return Results.NotFound();
     item.Name = request.Name.Trim();
-    item.PriceCentavos = request.PriceCentavos;
+    item.Price = request.Price;
     item.AvailableOrderQty = request.AvailableOrderQty;
     await db.SaveChangesAsync();
-    return Results.Ok(new FoodItemResponse(item.Id, item.Name, item.PriceCentavos, item.AvailableOrderQty, item.IsArchived));
+    return Results.Ok(new FoodItemResponse(item.Id, item.Name, item.Price, item.AvailableOrderQty, item.IsArchived));
 });
 
 app.MapDelete("/api/food-items/{id:guid}", async (Guid id, OrdersDbContext db) =>
@@ -67,8 +67,8 @@ app.MapDelete("/api/food-items/{id:guid}", async (Guid id, OrdersDbContext db) =
 app.MapGet("/api/orders", async (OrdersDbContext db) =>
 {
     var orders = await db.Orders.AsNoTracking().Include(order => order.Lines).OrderByDescending(order => order.CreatedAt)
-        .Select(order => new OrderResponse(order.Id, order.CreatedAt, order.TotalCentavos,
-            order.Lines.OrderBy(line => line.ItemName).Select(line => new OrderLineResponse(line.ItemName, line.Price, line.Quantity)).ToList())).ToListAsync();
+        .Select(order => new OrderResponse(order.Id, order.CreatedAt, order.Total,
+            order.Lines.OrderBy(line => line.ItemName).Select(line => new OrderLineResponse(line.ItemName, line.UnitPrice, line.Quantity)).ToList())).ToListAsync();
     return Results.Ok(orders);
 });
 
@@ -94,27 +94,27 @@ app.MapPost("/api/orders", async (CreateOrderRequest request, OrdersDbContext db
     {
         var foodItem = foodItems[requestLine.FoodItemId];
         foodItem.AvailableOrderQty -= requestLine.Quantity;
-        order.Lines.Add(new OrderLine { FoodItemId = foodItem.Id, ItemName = foodItem.Name, Price = foodItem.PriceCentavos, Quantity = requestLine.Quantity });
+        order.Lines.Add(new OrderLine { FoodItemId = foodItem.Id, ItemName = foodItem.Name, UnitPrice = foodItem.Price, Quantity = requestLine.Quantity });
     }
-    order.TotalCentavos = order.Lines.Sum(line => line.Price * line.Quantity);
+    order.Total = order.Lines.Sum(line => line.UnitPrice * line.Quantity);
     db.Orders.Add(order);
     await db.SaveChangesAsync();
     await transaction.CommitAsync();
-    return Results.Created($"/api/orders/{order.Id}", new OrderResponse(order.Id, order.CreatedAt, order.TotalCentavos,
-        order.Lines.Select(line => new OrderLineResponse(line.ItemName, line.Price, line.Quantity)).ToList()));
+    return Results.Created($"/api/orders/{order.Id}", new OrderResponse(order.Id, order.CreatedAt, order.Total,
+        order.Lines.Select(line => new OrderLineResponse(line.ItemName, line.UnitPrice, line.Quantity)).ToList()));
 });
 
 app.Run();
 
 static string? ValidateFoodItem(FoodItemRequest request) =>
     string.IsNullOrWhiteSpace(request.Name) ? "Name is required." : request.Name.Trim().Length > 100 ? "Name must be 100 characters or fewer." :
-    request.PriceCentavos <= 0 ? "Price must be greater than zero." : request.AvailableOrderQty < 0 ? "Inventory cannot be negative." : null;
+    request.Price <= 0 ? "Price must be greater than zero." : request.AvailableOrderQty < 0 ? "Inventory cannot be negative." : null;
 
 public partial class Program { }
 
-record FoodItemRequest(string Name, int PriceCentavos, int AvailableOrderQty);
-record FoodItemResponse(Guid Id, string Name, int PriceCentavos, int AvailableOrderQty, bool IsArchived);
+record FoodItemRequest(string Name, int Price, int AvailableOrderQty);
+record FoodItemResponse(Guid Id, string Name, int Price, int AvailableOrderQty, bool IsArchived);
 record CreateOrderRequest(List<CreateOrderLineRequest> Items);
 record CreateOrderLineRequest(Guid FoodItemId, int Quantity);
-record OrderResponse(Guid Id, DateTimeOffset CreatedAt, int TotalCentavos, List<OrderLineResponse> Lines);
-record OrderLineResponse(string ItemName, int Price, int Quantity);
+record OrderResponse(Guid Id, DateTimeOffset CreatedAt, int Total, List<OrderLineResponse> Lines);
+record OrderLineResponse(string ItemName, int UnitPrice, int Quantity);
