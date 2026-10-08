@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/backend.tests/">
+    <Project Path="backend.tests/KarenderyaOrders.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/backend/">
+    <Project Path="backend/KarenderyaOrders.Api.csproj" />
+  </Folder>
+</Solution>
