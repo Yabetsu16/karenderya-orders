@@ -17,7 +17,7 @@ namespace KarenderyaOrders.Api.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -39,7 +39,7 @@ namespace KarenderyaOrders.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("PriceCentavos")
+                    b.Property<int>("Price")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -58,7 +58,7 @@ namespace KarenderyaOrders.Api.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("TotalCentavos")
+                    b.Property<int>("Total")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -86,7 +86,7 @@ namespace KarenderyaOrders.Api.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<int>("UnitPriceCentavos")
+                    b.Property<int>("UnitPrice")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

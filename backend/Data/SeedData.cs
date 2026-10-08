@@ -9,9 +9,9 @@ public static class SeedData
     {
         if (await db.FoodItems.AnyAsync()) return;
         db.FoodItems.AddRange(
-            new FoodItem { Name = "Chicken Adobo", PriceCentavos = 7000, AvailableOrderQty = 10 },
-            new FoodItem { Name = "Pork Sisig", PriceCentavos = 8500, AvailableOrderQty = 8 },
-            new FoodItem { Name = "Steamed Rice", PriceCentavos = 1500, AvailableOrderQty = 999 });
+            new FoodItem { Name = "Chicken Adobo", Price = 7000, AvailableOrderQty = 10 },
+            new FoodItem { Name = "Pork Sisig", Price = 8500, AvailableOrderQty = 8 },
+            new FoodItem { Name = "Steamed Rice", Price = 1500, AvailableOrderQty = 999 });
         await db.SaveChangesAsync();
     }
 }
