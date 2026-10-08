@@ -25,5 +25,5 @@ public class OrderLine
     public int UnitPrice { get; set; }
     public int Quantity { get; set; }
     public Guid OrderId { get; set; }
-    public Order Order { get; set; } = null!;
+    public Order Orders { get; set; } = null!;
 }
