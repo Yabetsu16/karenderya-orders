@@ -98,13 +98,13 @@ namespace KarenderyaOrders.Api.Migrations
 
             modelBuilder.Entity("KarenderyaOrders.Api.Models.OrderLine", b =>
                 {
-                    b.HasOne("KarenderyaOrders.Api.Models.Order", "Order")
+                    b.HasOne("KarenderyaOrders.Api.Models.Order", "Orders")
                         .WithMany("Lines")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Order");
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("KarenderyaOrders.Api.Models.Order", b =>
