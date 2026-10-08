@@ -37,6 +37,8 @@ API integration tests use Testcontainers, so Docker must be running. They verify
 
 ## AI use
 
-I used OpenAI Codex to help scaffold the project, draft the API/UI/tests, and run build checks. I reviewed the generated code, kept the architecture to a single ASP.NET project and React client, and retained the explicit transaction and price-snapshot behavior because they are central to the exercise.
+I used OpenAI Codex to help scaffold the project, draft the API/UI/tests, and run build checks. I reviewed the generated code, kept the architecture to a single ASP.NET project and React client.
+
+When the credits of Codex are consumed I used Github Copilot for the remaining improvements. The improvements are mostly on renaming the variable names and separating sections and endpoints into different files to have separation of concerns and to have maintainability.
 
 I used Gordon in Docker desktop to fix the error when using the command "docker compose up --build"
