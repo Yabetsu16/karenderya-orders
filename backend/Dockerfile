@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY KarenderyaOrders.Api.csproj ./
-RUN dotnet restore
+RUN dotnet restore --no-cache
 COPY . ./
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
