@@ -52,20 +52,6 @@ h1 {
 small {
   color: #68615b;
 }
-.total {
-  background: #233d32;
-  color: #fff;
-  padding: 1rem 1.25rem;
-  border-radius: 12px;
-  min-width: 180px;
-}
-.total span,
-.total strong {
-  display: block;
-}
-.total strong {
-  font-size: 1.65rem;
-}
 .panel {
   background: #fff;
   border: 1px solid #e4ddd4;
@@ -107,6 +93,12 @@ small {
   grid-template-columns: 1.3fr 1fr;
   gap: 1.25rem;
 }
+.customer-order-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
 .menu-item,
 .compact-list article,
 .history article {
@@ -136,6 +128,32 @@ small {
 .stepper button {
   font-size: 1.25rem;
   padding: 0.25rem 0.7rem;
+}
+.order-summary {
+  list-style: none;
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0;
+}
+.order-summary li,
+.order-summary-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+}
+.order-summary li {
+  border-bottom: 1px solid #eee7df;
+}
+.order-summary li strong,
+.order-summary-total strong {
+  white-space: nowrap;
+}
+.order-summary-total {
+  border-top: 1px solid #e4ddd4;
+  margin-top: 0.4rem;
+  padding-bottom: 0;
 }
 .checkout {
   width: 100%;
@@ -180,6 +198,11 @@ small {
   .management {
     align-items: stretch;
     flex-direction: column;
+  }
+  @media (max-width: 900px) {
+    .customer-order-layout {
+      grid-template-columns: 1fr;
+    }
   }
   .columns {
     grid-template-columns: 1fr;

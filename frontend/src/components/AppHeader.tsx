@@ -1,11 +1,6 @@
-import { formatPrice } from "../format";
+type AppHeaderProps = { isAdmin: boolean };
 
-type AppHeaderProps = {
-  isAdmin: boolean;
-  total: number;
-};
-
-export function AppHeader({ isAdmin, total }: AppHeaderProps) {
+export function AppHeader({ isAdmin }: AppHeaderProps) {
   return (
     <header>
       <div>
@@ -17,12 +12,6 @@ export function AppHeader({ isAdmin, total }: AppHeaderProps) {
             : "Choose your dishes and place an order."}
         </p>
       </div>
-      {!isAdmin && (
-        <div className="total">
-          <span>Current order</span>
-          <strong>{formatPrice(total)}</strong>
-        </div>
-      )}
     </header>
   );
 }

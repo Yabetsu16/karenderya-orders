@@ -165,7 +165,7 @@ function App() {
 
   return (
     <main>
-      <AppHeader isAdmin={isAdmin} total={total} />
+      <AppHeader isAdmin={isAdmin} />
       {message && (
         <div className={`message ${message.kind}`} role="status">
           {message.text}
