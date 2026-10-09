@@ -18,26 +18,28 @@ Open [http://localhost:5173](http://localhost:5173) for the customer ordering pa
 
 The ASP.NET API is available through the Docker Compose `api` service. Its main routes are:
 
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/health` | Check that the API is responding. |
-| `GET` | `/api/food-items` | List active menu items. Add `?includeArchived=true` to include archived items for staff. |
-| `POST` | `/api/food-items` | Add a menu item. |
-| `PUT` | `/api/food-items/{id}` | Update a menu item. |
-| `DELETE` | `/api/food-items/{id}` | Archive a menu item without deleting its order records. |
-| `POST` | `/api/food-items/{id}/unarchive` | Restore an archived menu item. |
-| `POST` | `/api/orders` | Place an order and deduct the selected quantities from inventory. |
-| `GET` | `/api/orders` | List orders not yet collected, including those marked ready. |
-| `GET` | `/api/orders/history` | List collected orders. |
-| `GET` | `/api/orders/{orderNumber}` | Get an order's readiness and collection status. |
-| `POST` | `/api/orders/{orderNumber}/ready` | Mark an order ready for pickup. |
-| `POST` | `/api/orders/{orderNumber}/collected` | Mark a ready order collected. |
+| Method   | Route                                 | Purpose                                                                                  |
+| -------- | ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GET`    | `/api/health`                         | Check that the API is responding.                                                        |
+| `GET`    | `/api/food-items`                     | List active menu items. Add `?includeArchived=true` to include archived items for staff. |
+| `POST`   | `/api/food-items`                     | Add a menu item.                                                                         |
+| `PUT`    | `/api/food-items/{id}`                | Update a menu item.                                                                      |
+| `DELETE` | `/api/food-items/{id}`                | Archive a menu item without deleting its order records.                                  |
+| `POST`   | `/api/food-items/{id}/unarchive`      | Restore an archived menu item.                                                           |
+| `POST`   | `/api/orders`                         | Place an order and deduct the selected quantities from inventory.                        |
+| `GET`    | `/api/orders`                         | List orders not yet collected, including those marked ready.                             |
+| `GET`    | `/api/orders/history`                 | List collected orders.                                                                   |
+| `GET`    | `/api/orders/{orderNumber}`           | Get an order's readiness and collection status.                                          |
+| `POST`   | `/api/orders/{orderNumber}/ready`     | Mark an order ready for pickup.                                                          |
+| `POST`   | `/api/orders/{orderNumber}/collected` | Mark a ready order collected.                                                            |
 
 ## Checks
 
 ```sh
 dotnet test
-cd frontend && npm ci && npm run build
+cd frontend
+npm ci
+npm run build
 ```
 
 API integration tests use Testcontainers, so Docker must be running when running `dotnet test`. They verify checkout and inventory reduction, saved price snapshots and fractional peso prices, insufficient-inventory rejection, menu archival and restoration, duplicate menu-name conflicts, and the order lifecycle. In particular, they check that ready orders remain current, collected orders move to history, and an order cannot be collected before it is ready.
