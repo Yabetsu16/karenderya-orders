@@ -4,6 +4,8 @@ A small ordering and order-management app for a karenderya. Customers browse the
 
 ## Run it
 
+Please install Docker to run the app. Download in https://docs.docker.com/desktop/setup/install/windows-install/
+
 With Docker running:
 
 ```sh
