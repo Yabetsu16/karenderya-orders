@@ -1,6 +1,6 @@
 # Karenderya Orders
 
-A small cashier-facing CRUD app for a karenderya. It manages a menu, records orders, and prevents orders that exceed inventory.
+A small ordering and order-management app for a karenderya. Customers browse the menu and place orders at `/`; staff manage dishes, inventory, and order preparation at `/admin`. The API validates inventory so orders cannot exceed available stock.
 
 ## Run it
 
@@ -10,7 +10,28 @@ With Docker running:
 docker compose up --build
 ```
 
-Open [http://localhost:5173](http://localhost:5173) for the customer ordering page, or [http://localhost:5173/admin](http://localhost:5173/admin) for menu and order administration. The API applies EF Core migrations and seeds three menu items on first start. To reset the database and seed again, run `docker compose down -v`.
+Open [http://localhost:5173](http://localhost:5173) for the customer ordering page, or [http://localhost:5173/admin](http://localhost:5173/admin) for menu and order administration. The API applies EF Core migrations and seeds three menu items on first start.
+
+> **Warning:** `docker compose down -v` removes the PostgreSQL data volume and permanently deletes the app's stored menu and orders. Use it only when you intend to reset the database; the API will seed the menu again the next time it starts.
+
+## API overview
+
+The ASP.NET API is available through the Docker Compose `api` service. Its main routes are:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | Check that the API is responding. |
+| `GET` | `/api/food-items` | List active menu items. Add `?includeArchived=true` to include archived items for staff. |
+| `POST` | `/api/food-items` | Add a menu item. |
+| `PUT` | `/api/food-items/{id}` | Update a menu item. |
+| `DELETE` | `/api/food-items/{id}` | Archive a menu item without deleting its order records. |
+| `POST` | `/api/food-items/{id}/unarchive` | Restore an archived menu item. |
+| `POST` | `/api/orders` | Place an order and deduct the selected quantities from inventory. |
+| `GET` | `/api/orders` | List orders not yet collected, including those marked ready. |
+| `GET` | `/api/orders/history` | List collected orders. |
+| `GET` | `/api/orders/{orderNumber}` | Get an order's readiness and collection status. |
+| `POST` | `/api/orders/{orderNumber}/ready` | Mark an order ready for pickup. |
+| `POST` | `/api/orders/{orderNumber}/collected` | Mark a ready order collected. |
 
 ## Checks
 
@@ -19,11 +40,11 @@ dotnet test
 cd frontend && npm ci && npm run build
 ```
 
-API integration tests use Testcontainers, so Docker must be running. They verify successful checkout, inventory reduction, stored price snapshots, rejection of insufficient inventory, and archival behavior.
+API integration tests use Testcontainers, so Docker must be running when running `dotnet test`. They verify checkout and inventory reduction, saved price snapshots and fractional peso prices, insufficient-inventory rejection, menu archival and restoration, duplicate menu-name conflicts, and the order lifecycle. In particular, they check that ready orders remain current, collected orders move to history, and an order cannot be collected before it is ready.
 
 ## Design choices
 
-- Prices use floating-point Philippine peso values throughout the API and database.
+- Prices use floating-point Philippine peso values throughout the API and database. This supports fractional-peso prices, but binary floating-point arithmetic can introduce small rounding differences; exact decimal arithmetic would be preferable if strict financial precision becomes a requirement.
 - Checkout uses a PostgreSQL serializable transaction to validate all requested items and inventory before saving the order and deducting stock.
 - Order lines store the dish name and unit price at checkout, preserving order history if the menu item changes later.
 - Each order receives a sequential order number. Customers can see its status on the ordering page, which updates automatically when staff mark it ready or collected.
@@ -36,15 +57,11 @@ API integration tests use Testcontainers, so Docker must be running. They verify
 ## Manual smoke checklist
 
 1. Add, edit, and archive a menu item.
-2. Add items to an order and confirm stock and history update after checkout.
+2. Add items to an order and place it. Confirm stock decreases and the order appears in **Current orders** in the admin page. It remains there after being marked ready.
 3. Attempt to order more than available stock and confirm the order is rejected with no stock change.
 4. Confirm archived dishes are absent from the order menu but remain in Menu management.
-5. Mark an order ready, then collected; confirm the customer sees each status and the collected order appears in admin history and total income.
+5. Mark an order ready, then collected; confirm the customer sees each status and the order moves from **Current orders** to admin **Order history**, where it contributes to total income.
 
 ## AI use
 
-I used OpenAI Codex to help scaffold the project, draft the API/UI/tests, and run build checks. I reviewed the generated code, kept the architecture to a single ASP.NET project and React client.
-
-When the credits of Codex are consumed I used Github Copilot for the remaining improvements. The improvements are mostly on renaming the variable names and separating sections and endpoints into different files to have separation of concerns and to have maintainability.
-
-I used Gordon in Docker desktop to fix the error when using the command "docker compose up --build"
+OpenAI Codex helped scaffold the project, draft parts of the API, UI, and tests, and run build checks. GitHub Copilot assisted with later refinements, including clearer names and separating endpoint and application sections into focused files. Docker Desktop's Gordon helped troubleshoot an issue with `docker compose up --build`. I reviewed the generated changes and made the project decisions and final edits.
