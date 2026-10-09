@@ -21,12 +21,14 @@ cd frontend && npm ci && npm run build
 
 API integration tests use Testcontainers, so Docker must be running. They verify successful checkout, inventory reduction, stored price snapshots, rejection of insufficient inventory, and archival behavior.
 
-## Design choices and assumptions
+## Design choices
 
-- Prices are stored as integer centavos and displayed as Philippine pesos to avoid floating-point currency errors.
-- Checkout uses a PostgreSQL serializable transaction: every line is validated before stock is deducted and the order is saved.
-- Archiving hides a dish from new orders instead of removing it, preserving prior order data.
-- This is a single-cashier assessment app. Authentication, payments, discounts, taxes, customer data, reports, and stock-adjustment history are intentionally excluded.
+- Prices use floating-point Philippine peso values throughout the API and database.
+- Checkout uses a PostgreSQL serializable transaction to validate all requested items and inventory before saving the order and deducting stock.
+- Order lines store the dish name and unit price at checkout, preserving order history if the menu item changes later.
+- Archiving hides a dish from new orders while keeping it available in menu management and preserving its previous order data.
+- The customer ordering page and menu/order administration are separate views in the same React app, available at `/` and `/admin`.
+- The API applies EF Core migrations and seeds the initial menu when it starts.
 
 ## Manual smoke checklist
 
