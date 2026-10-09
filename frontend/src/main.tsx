@@ -10,6 +10,7 @@ import "./styles.css";
 
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 const emptyForm: FormValues = { name: "", price: "", inventory: "" };
+type Message = { text: string; kind: "success" | "warning" };
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, {
@@ -33,7 +34,7 @@ function App() {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [form, setForm] = useState<FormValues>(emptyForm);
   const [editing, setEditing] = useState<FoodItem | null>(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<Message | null>(null);
   const [busy, setBusy] = useState(false);
   const isAdmin = window.location.pathname === "/admin";
 
@@ -47,7 +48,9 @@ function App() {
   };
 
   useEffect(() => {
-    refresh().catch((error: Error) => setMessage(error.message));
+    refresh().catch((error: Error) =>
+      setMessage({ text: error.message, kind: "warning" }),
+    );
   }, []);
 
   const activeItems = items.filter((item) => !item.isArchived);
@@ -72,11 +75,11 @@ function App() {
   const saveItem = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
-    setMessage("");
+    setMessage(null);
     try {
       const payload = {
         name: form.name,
-        price: Math.round(Number(form.price) * 100),
+        price: Number(form.price),
         availableOrderQty: Number(form.inventory),
       };
       await request(
@@ -86,9 +89,9 @@ function App() {
       setForm(emptyForm);
       setEditing(null);
       await refresh();
-      setMessage("Menu saved.");
+      setMessage({ text: "Menu saved.", kind: "success" });
     } catch (error) {
-      setMessage((error as Error).message);
+      setMessage({ text: (error as Error).message, kind: "warning" });
     } finally {
       setBusy(false);
     }
@@ -101,9 +104,9 @@ function App() {
       await request(`/api/food-items/${item.id}`, { method: "DELETE" });
       setCart((current) => ({ ...current, [item.id]: 0 }));
       await refresh();
-      setMessage("Item archived.");
+      setMessage({ text: "Item archived.", kind: "success" });
     } catch (error) {
-      setMessage((error as Error).message);
+      setMessage({ text: (error as Error).message, kind: "warning" });
     }
   };
 
@@ -113,9 +116,9 @@ function App() {
         method: "POST",
       });
       await refresh();
-      setMessage("Item unarchived.");
+      setMessage({ text: "Item unarchived.", kind: "success" });
     } catch (error) {
-      setMessage((error as Error).message);
+      setMessage({ text: (error as Error).message, kind: "warning" });
     }
   };
 
@@ -124,11 +127,11 @@ function App() {
       .filter(([, quantity]) => quantity > 0)
       .map(([foodItemId, quantity]) => ({ foodItemId, quantity }));
     if (!lines.length) {
-      setMessage("Add at least one item to the order.");
+      setMessage({ text: "Add at least one item to the order.", kind: "warning" });
       return;
     }
     setBusy(true);
-    setMessage("");
+    setMessage(null);
     try {
       await request("/api/orders", {
         method: "POST",
@@ -136,9 +139,9 @@ function App() {
       });
       setCart({});
       await refresh();
-      setMessage("Order recorded and inventory updated.");
+      setMessage({ text: "Order recorded and inventory updated.", kind: "success" });
     } catch (error) {
-      setMessage((error as Error).message);
+      setMessage({ text: (error as Error).message, kind: "warning" });
       await refresh();
     } finally {
       setBusy(false);
@@ -149,7 +152,7 @@ function App() {
     setEditing(item);
     setForm({
       name: item.name,
-      price: (item.price / 100).toFixed(2),
+      price: item.price.toFixed(2),
       inventory: String(item.availableOrderQty),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -164,8 +167,8 @@ function App() {
     <main>
       <AppHeader isAdmin={isAdmin} total={total} />
       {message && (
-        <div className="message" role="status">
-          {message}
+        <div className={`message ${message.kind}`} role="status">
+          {message.text}
         </div>
       )}
       {!isAdmin ? (

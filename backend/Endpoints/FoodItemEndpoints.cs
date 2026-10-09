@@ -74,5 +74,5 @@ public static class FoodItemEndpoints
         request.Price <= 0 ? "Price must be greater than zero." : request.AvailableOrderQty < 0 ? "Inventory cannot be negative." : null;
 }
 
-public sealed record FoodItemRequest(string Name, int Price, int AvailableOrderQty);
-public sealed record FoodItemResponse(Guid Id, string Name, int Price, int AvailableOrderQty, bool IsArchived);
+public sealed record FoodItemRequest(string Name, double Price, int AvailableOrderQty);
+public sealed record FoodItemResponse(Guid Id, string Name, double Price, int AvailableOrderQty, bool IsArchived);

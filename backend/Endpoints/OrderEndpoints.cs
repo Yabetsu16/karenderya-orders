@@ -55,5 +55,5 @@ public static class OrderEndpoints
 
 public sealed record CreateOrderRequest(List<CreateOrderLineRequest> Items);
 public sealed record CreateOrderLineRequest(Guid FoodItemId, int Quantity);
-public sealed record OrderResponse(Guid Id, DateTimeOffset CreatedAt, int Total, List<OrderLineResponse> Lines);
-public sealed record OrderLineResponse(string ItemName, int UnitPrice, int Quantity);
+public sealed record OrderResponse(Guid Id, DateTimeOffset CreatedAt, double Total, List<OrderLineResponse> Lines);
+public sealed record OrderLineResponse(string ItemName, double UnitPrice, int Quantity);
