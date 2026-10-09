@@ -1,6 +1,14 @@
-type AppHeaderProps = { isAdmin: boolean };
+type AppHeaderProps = {
+  isAdmin: boolean;
+  showingHistory: boolean;
+  onToggleHistory: () => void;
+};
 
-export function AppHeader({ isAdmin }: AppHeaderProps) {
+export function AppHeader({
+  isAdmin,
+  showingHistory,
+  onToggleHistory,
+}: AppHeaderProps) {
   return (
     <header>
       <div>
@@ -12,6 +20,11 @@ export function AppHeader({ isAdmin }: AppHeaderProps) {
             : "Choose your dishes and place an order."}
         </p>
       </div>
+      {isAdmin && (
+        <button className="history-toggle" onClick={onToggleHistory}>
+          {showingHistory ? "Back to dashboard" : "Order history"}
+        </button>
+      )}
     </header>
   );
 }

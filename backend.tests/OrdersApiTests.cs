@@ -47,9 +47,66 @@ public class OrdersApiTests(DatabaseFixture database) : IAsyncLifetime
         var response = await _client.PostAsJsonAsync("/api/orders", new { items = new[] { new { foodItemId = item.Id, quantity = 2 } } });
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var order = await response.Content.ReadFromJsonAsync<OrderResponse>(Json);
-        order!.Total.Should().Be(item.Price * 2);
+        order!.OrderNumber.Should().BeGreaterThan(0);
+        order.Total.Should().Be(item.Price * 2);
         order.Lines.Single().UnitPrice.Should().Be(item.Price);
         (await Menu()).Single(menuItem => menuItem.Id == item.Id).AvailableOrderQty.Should().Be(before - 2);
+    }
+
+    [Fact]
+    public async Task Order_remains_current_when_ready_and_moves_to_history_when_collected()
+    {
+        var item = (await Menu()).First();
+        var create = await _client.PostAsJsonAsync("/api/orders", new
+        {
+            items = new[] { new { foodItemId = item.Id, quantity = 1 } },
+        });
+        var order = await create.Content.ReadFromJsonAsync<OrderResponse>(Json);
+
+        var initialStatus = await _client.GetFromJsonAsync<OrderStatusResponse>(
+            $"/api/orders/{order!.OrderNumber}", Json);
+        var currentOrders = await _client.GetFromJsonAsync<List<OrderResponse>>("/api/orders", Json);
+
+        initialStatus!.IsReady.Should().BeFalse();
+        initialStatus.IsCollected.Should().BeFalse();
+        currentOrders.Should().Contain(current => current.OrderNumber == order.OrderNumber);
+        (await _client.PostAsync($"/api/orders/{order.OrderNumber}/ready", null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var readyStatus = await _client.GetFromJsonAsync<OrderStatusResponse>(
+            $"/api/orders/{order.OrderNumber}", Json);
+        currentOrders = await _client.GetFromJsonAsync<List<OrderResponse>>("/api/orders", Json);
+        readyStatus!.IsReady.Should().BeTrue();
+        currentOrders.Should().Contain(current => current.OrderNumber == order.OrderNumber);
+        currentOrders!.Single(current => current.OrderNumber == order.OrderNumber)
+            .IsReady.Should().BeTrue();
+
+        (await _client.PostAsync($"/api/orders/{order.OrderNumber}/collected", null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var collectedStatus = await _client.GetFromJsonAsync<OrderStatusResponse>(
+            $"/api/orders/{order.OrderNumber}", Json);
+        currentOrders = await _client.GetFromJsonAsync<List<OrderResponse>>("/api/orders", Json);
+        var history = await _client.GetFromJsonAsync<List<OrderResponse>>("/api/orders/history", Json);
+        collectedStatus!.IsCollected.Should().BeTrue();
+        currentOrders.Should().NotContain(current => current.OrderNumber == order.OrderNumber);
+        history.Should().Contain(current => current.OrderNumber == order.OrderNumber);
+    }
+
+    [Fact]
+    public async Task Order_cannot_be_collected_before_it_is_ready()
+    {
+        var item = (await Menu()).First();
+        var create = await _client.PostAsJsonAsync("/api/orders", new
+        {
+            items = new[] { new { foodItemId = item.Id, quantity = 1 } },
+        });
+        var order = await create.Content.ReadFromJsonAsync<OrderResponse>(Json);
+
+        var response = await _client.PostAsync(
+            $"/api/orders/{order!.OrderNumber}/collected", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]
@@ -137,5 +194,6 @@ public sealed class TestAppFactory(string connectionString) : WebApplicationFact
 }
 
 public record FoodItemResponse(Guid Id, string Name, double Price, int AvailableOrderQty, bool IsArchived);
-public record OrderResponse(Guid Id, DateTimeOffset CreatedAt, double Total, List<OrderLineResponse> Lines);
+public record OrderResponse(Guid Id, int OrderNumber, DateTimeOffset CreatedAt, double Total, bool IsReady, bool IsCollected, List<OrderLineResponse> Lines);
+public record OrderStatusResponse(int OrderNumber, bool IsReady, bool IsCollected);
 public record OrderLineResponse(string ItemName, double UnitPrice, int Quantity);

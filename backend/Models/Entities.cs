@@ -12,8 +12,11 @@ public class FoodItem
 public class Order
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public int OrderNumber { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public double Total { get; set; }
+    public bool IsReady { get; set; }
+    public bool IsCollected { get; set; }
     public List<OrderLine> Lines { get; set; } = [];
 }
 

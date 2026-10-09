@@ -26,6 +26,9 @@ API integration tests use Testcontainers, so Docker must be running. They verify
 - Prices use floating-point Philippine peso values throughout the API and database.
 - Checkout uses a PostgreSQL serializable transaction to validate all requested items and inventory before saving the order and deducting stock.
 - Order lines store the dish name and unit price at checkout, preserving order history if the menu item changes later.
+- Each order receives a sequential order number. Customers can see its status on the ordering page, which updates automatically when staff mark it ready or collected.
+- The admin dashboard keeps orders in the current-orders list while they are being prepared and ready for pickup. Staff mark orders ready, then collected.
+- Collected orders appear in order history, where the admin can see total income from collected orders.
 - Archiving hides a dish from new orders while keeping it available in menu management and preserving its previous order data.
 - The customer ordering page and menu/order administration are separate views in the same React app, available at `/` and `/admin`.
 - The API applies EF Core migrations and seeds the initial menu when it starts.
@@ -36,6 +39,7 @@ API integration tests use Testcontainers, so Docker must be running. They verify
 2. Add items to an order and confirm stock and history update after checkout.
 3. Attempt to order more than available stock and confirm the order is rejected with no stock change.
 4. Confirm archived dishes are absent from the order menu but remain in Menu management.
+5. Mark an order ready, then collected; confirm the customer sees each status and the collected order appears in admin history and total income.
 
 ## AI use
 

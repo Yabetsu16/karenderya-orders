@@ -38,6 +38,9 @@ header {
   align-items: end;
   margin-bottom: 2rem;
 }
+.history-toggle {
+  flex-shrink: 0;
+}
 h1 {
   font-size: clamp(2rem, 6vw, 4rem);
   margin: 0.15rem 0;
@@ -99,6 +102,9 @@ small {
   gap: 1.25rem;
   align-items: start;
 }
+.customer-order-layout > .panel {
+  margin-bottom: 1.25rem;
+}
 .menu-item,
 .compact-list article,
 .history article {
@@ -155,6 +161,23 @@ small {
   margin-top: 0.4rem;
   padding-bottom: 0;
 }
+.order-status {
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+}
+.order-status p {
+  margin: 0.25rem 0 0;
+}
+.order-status.preparing {
+  background: #fff4ce;
+  border: 1px solid #e8cf76;
+  color: #594713;
+}
+.order-status.ready {
+  background: #e7f1e6;
+  border: 1px solid #bdd6b8;
+}
 .checkout {
   width: 100%;
   margin-top: 1rem;
@@ -179,6 +202,24 @@ small {
 .compact-list article:last-child {
   border-bottom: 0;
 }
+.current-order-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.history-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.history-heading h2,
+.history-heading p {
+  margin-top: 0;
+}
+.history-heading p {
+  margin-bottom: 0.75rem;
+}
 .message {
   border-radius: 8px;
   padding: 0.8rem 1rem;
@@ -199,10 +240,8 @@ small {
     align-items: stretch;
     flex-direction: column;
   }
-  @media (max-width: 900px) {
-    .customer-order-layout {
-      grid-template-columns: 1fr;
-    }
+  header {
+    align-items: stretch;
   }
   .columns {
     grid-template-columns: 1fr;
@@ -213,5 +252,14 @@ small {
   .management input,
   .management input:first-child {
     width: 100%;
+  }
+  .current-order-actions {
+    align-items: end;
+    flex-direction: column;
+  }
+}
+@media (max-width: 900px) {
+  .customer-order-layout {
+    grid-template-columns: 1fr;
   }
 }

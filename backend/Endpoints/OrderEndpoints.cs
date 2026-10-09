@@ -11,10 +11,45 @@ public static class OrderEndpoints
     {
         app.MapGet("/api/orders", async (OrdersDbContext db) =>
         {
-            var orders = await db.Orders.AsNoTracking().Include(order => order.Lines).OrderByDescending(order => order.CreatedAt)
-                .Select(order => new OrderResponse(order.Id, order.CreatedAt, order.Total,
+            var orders = await db.Orders.AsNoTracking().Where(order => !order.IsCollected).Include(order => order.Lines).OrderBy(order => order.CreatedAt)
+                .Select(order => new OrderResponse(order.Id, order.OrderNumber, order.CreatedAt, order.Total, order.IsReady, order.IsCollected,
                     order.Lines.OrderBy(line => line.ItemName).Select(line => new OrderLineResponse(line.ItemName, line.UnitPrice, line.Quantity)).ToList())).ToListAsync();
             return Results.Ok(orders);
+        });
+
+        app.MapGet("/api/orders/history", async (OrdersDbContext db) =>
+        {
+            var orders = await db.Orders.AsNoTracking().Where(order => order.IsCollected).Include(order => order.Lines).OrderByDescending(order => order.CreatedAt)
+                .Select(order => new OrderResponse(order.Id, order.OrderNumber, order.CreatedAt, order.Total, order.IsReady, order.IsCollected,
+                    order.Lines.OrderBy(line => line.ItemName).Select(line => new OrderLineResponse(line.ItemName, line.UnitPrice, line.Quantity)).ToList())).ToListAsync();
+            return Results.Ok(orders);
+        });
+
+        app.MapGet("/api/orders/{orderNumber:int}", async (int orderNumber, OrdersDbContext db) =>
+        {
+            var order = await db.Orders.AsNoTracking().Where(order => order.OrderNumber == orderNumber).Select(order =>
+                new OrderStatusResponse(order.OrderNumber, order.IsReady, order.IsCollected)).SingleOrDefaultAsync();
+            return order is null ? Results.NotFound() : Results.Ok(order);
+        });
+
+        app.MapPost("/api/orders/{orderNumber:int}/ready", async (int orderNumber, OrdersDbContext db) =>
+        {
+            var order = await db.Orders.SingleOrDefaultAsync(order => order.OrderNumber == orderNumber);
+            if (order is null) return Results.NotFound();
+            order.IsReady = true;
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        app.MapPost("/api/orders/{orderNumber:int}/collected", async (int orderNumber, OrdersDbContext db) =>
+        {
+            var order = await db.Orders.SingleOrDefaultAsync(order => order.OrderNumber == orderNumber);
+            if (order is null) return Results.NotFound();
+            if (!order.IsReady)
+                return Results.Conflict(new { message = "An order must be marked ready before it can be collected." });
+            order.IsCollected = true;
+            await db.SaveChangesAsync();
+            return Results.NoContent();
         });
 
         app.MapPost("/api/orders", async (CreateOrderRequest request, OrdersDbContext db) =>
@@ -45,7 +80,7 @@ public static class OrderEndpoints
             db.Orders.Add(order);
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
-            return Results.Created($"/api/orders/{order.Id}", new OrderResponse(order.Id, order.CreatedAt, order.Total,
+            return Results.Created($"/api/orders/{order.OrderNumber}", new OrderResponse(order.Id, order.OrderNumber, order.CreatedAt, order.Total, order.IsReady, order.IsCollected,
                 order.Lines.Select(line => new OrderLineResponse(line.ItemName, line.UnitPrice, line.Quantity)).ToList()));
         });
 
@@ -55,5 +90,6 @@ public static class OrderEndpoints
 
 public sealed record CreateOrderRequest(List<CreateOrderLineRequest> Items);
 public sealed record CreateOrderLineRequest(Guid FoodItemId, int Quantity);
-public sealed record OrderResponse(Guid Id, DateTimeOffset CreatedAt, double Total, List<OrderLineResponse> Lines);
+public sealed record OrderResponse(Guid Id, int OrderNumber, DateTimeOffset CreatedAt, double Total, bool IsReady, bool IsCollected, List<OrderLineResponse> Lines);
+public sealed record OrderStatusResponse(int OrderNumber, bool IsReady, bool IsCollected);
 public sealed record OrderLineResponse(string ItemName, double UnitPrice, int Quantity);

@@ -1,11 +1,12 @@
 import { formatPrice } from "../format";
-import type { FoodItem } from "../types";
+import type { FoodItem, OrderStatus } from "../types";
 
 type CustomerOrderProps = {
   items: FoodItem[];
   cart: Record<string, number>;
   total: number;
   busy: boolean;
+  trackedOrder: OrderStatus | null;
   onQuantityChange: (item: FoodItem, delta: number) => void;
   onCheckout: () => void;
 };
@@ -15,6 +16,7 @@ export function CustomerOrder({
   cart,
   total,
   busy,
+  trackedOrder,
   onQuantityChange,
   onCheckout,
 }: CustomerOrderProps) {
@@ -69,6 +71,21 @@ export function CustomerOrder({
         className="panel checkout-panel"
         aria-labelledby="order-summary-title"
       >
+        {trackedOrder && (
+          <div
+            className={`order-status ${trackedOrder.isCollected || trackedOrder.isReady ? "ready" : "preparing"}`}
+            aria-live="polite"
+          >
+            <strong>Order #{trackedOrder.orderNumber}</strong>
+            <p>
+              {trackedOrder.isCollected
+                ? "Your order has been collected. Enjoy your food :)"
+                : trackedOrder.isReady
+                ? "Your order is ready. Please collect it."
+                : "Your order is being prepared. This status updates automatically."}
+            </p>
+          </div>
+        )}
         <h2 id="order-summary-title">Order summary</h2>
         {orderLines.length === 0 ? (
           <p className="subtle">Your order is empty.</p>

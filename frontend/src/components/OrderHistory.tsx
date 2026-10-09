@@ -3,19 +3,24 @@ import type { Order } from "../types";
 
 type OrderHistoryProps = {
   orders: Order[];
+  totalIncome: number;
 };
 
-export function OrderHistory({ orders }: OrderHistoryProps) {
+export function OrderHistory({ orders, totalIncome }: OrderHistoryProps) {
   return (
     <section className="panel history">
-      <h2>Previous orders</h2>
+      <div className="history-heading">
+        <h2>Order history</h2>
+        <p>Total income: <strong>{formatPrice(totalIncome)}</strong></p>
+      </div>
       {orders.length === 0 ? (
-        <p className="subtle">No orders yet.</p>
+        <p className="subtle">No collected orders yet.</p>
       ) : (
         orders.map((order) => (
           <article key={order.id}>
             <div>
               <strong>
+                Order #{order.orderNumber} ·{" "}
                 {new Date(order.createdAt).toLocaleString("en-PH")}
               </strong>
               <p>
